@@ -51,11 +51,9 @@ async function main() {
   const pool = getPool()
   await waitForDb(pool)
 
-  const dir = path.join(__dirname, '..', 'migrations')
-  const files = fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith('.sql'))
-    .sort()
+  // 仅保留基础初始化迁移：scripts/001_init.sql
+  const dir = path.join(__dirname)
+  const files = ['001_init.sql']
 
   const conn = await pool.getConnection()
   try {

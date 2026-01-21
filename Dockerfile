@@ -16,7 +16,7 @@ RUN npm install --registry=https://registry.npmmirror.com
 RUN if [ $(ls /opt/application | grep -w tsconfig.json | wc -l ) = 1 ]; then npm run build; fi
 
 # 写入run.sh
-RUN echo -e '#!/usr/bin/env bash\ncd /opt/application/ && npm run migrate  npm start' > /opt/application/run.sh
+RUN echo -e '#!/usr/bin/env bash\ncd /opt/application/ && npm start' > /opt/application/run.sh
 
 # 指定run.sh权限
 Run chmod a+x run.sh

@@ -62,7 +62,6 @@ async function moderateImage(imageUrl) {
   // 注意：抖音开放平台可能没有独立的图片审核API
   // 这里先返回通过，后续可以根据实际情况调整
   // 或者使用第三方图片审核服务（如阿里云、腾讯云等）
-  console.warn('[moderation] Image moderation not fully implemented, defaulting to pass')
   return { passed: true }
 }
 

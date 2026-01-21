@@ -48,7 +48,6 @@ function parseImageUrls(imageUrls) {
       }
     } catch (e) {
       // 解析失败时，如果是字符串，尝试作为单个URL
-      console.warn('[groups] Failed to parse image_urls as JSON, treating as single URL:', e.message)
       return [imageUrls]
     }
   }
@@ -70,11 +69,8 @@ router.get('/same-day/special-post/comments', requireAuth, async (req, res, next
     
     const quitDate = me[0] && me[0].quit_date
     if (!quitDate) {
-      console.log('[groups] GET /same-day/special-post/comments - user has no quit_date')
       return res.json([])
     }
-
-    console.log(`[groups] GET /same-day/special-post/comments - user quit_date: ${quitDate}`)
 
     // 查询所有同一戒烟日期的用户对该固定帖子的评论
     // 固定帖子的 post_id 为 NULL，group_type 为 'same-day'，通过 user_id 的 quit_date 来判断
@@ -94,7 +90,6 @@ router.get('/same-day/special-post/comments', requireAuth, async (req, res, next
          ORDER BY c.created_at DESC`,
         [quitDate]
       )
-      console.log(`[groups] GET /same-day/special-post/comments - found ${(rows || []).length} comments`)
     } catch (dbError) {
       console.error('[groups] Database error in same-day/special-post/comments GET:', dbError.message, dbError.stack)
       return res.status(500).json({ error: '数据库操作异常，请稍后重试', code: 'DB_ERROR' })
@@ -134,7 +129,6 @@ router.get('/same-day/special-post/comments', requireAuth, async (req, res, next
     // 解析 image_urls JSON 字段
     const comments = (rows || []).map(c => {
       const parsedImageUrls = parseImageUrls(c.image_urls)
-      console.log(`[groups] Comment ${c.id}: raw type=${typeof c.image_urls}, isArray=${Array.isArray(c.image_urls)}, raw=${JSON.stringify(c.image_urls)}, parsed=${JSON.stringify(parsedImageUrls)}`)
       return {
         ...c,
         image_urls: parsedImageUrls,
@@ -661,11 +655,9 @@ router.get('/posts/:id/comments', requireAuth, async (req, res, next) => {
 // 获取固定帖子的评论（与普通帖子评论接口分开，但逻辑相同）
 router.get('/featured-posts/:id/comments', requireAuth, async (req, res, next) => {
   const postId = Number(req.params.id)
-  console.log(`[groups] GET /featured-posts/${postId}/comments - user: ${req.user?.id}`)
   
   try {
     if (!postId || isNaN(postId)) {
-      console.log(`[groups] Invalid postId: ${postId}`)
       return res.status(400).json({ error: 'invalid post id' })
     }
     
@@ -764,14 +756,9 @@ router.get('/featured-posts/:id/comments', requireAuth, async (req, res, next) =
       }
     })
     
-    console.log(`[groups] GET /featured-posts/${postId}/comments - success, returning ${(comments || []).length} comments`)
     res.json(comments || [])
   } catch (e) {
-    console.error('[groups] ERROR in featured-posts comments:', e.message)
-    console.error('[groups] Error stack:', e.stack)
-    console.error('[groups] Request params:', JSON.stringify(req.params))
-    console.error('[groups] Request user:', req.user?.id)
-    // 确保错误被传递
+    console.error('[groups] ERROR in featured-posts comments:', e.message, e.stack)
     next(e)
   }
 })
@@ -1032,14 +1019,11 @@ router.post('/featured-posts/:id/vote', requireAuth, async (req, res, next) => {
 // 回复固定帖子
 router.post('/featured-posts/:id/comments', requireAuth, async (req, res, next) => {
   const postId = Number(req.params.id)
-  console.log(`[groups] POST /featured-posts/${postId}/comments - user: ${req.user?.id}`)
-  console.log(`[groups] Request body:`, JSON.stringify({ content: req.body?.content?.substring(0, 50), imageUrls: req.body?.imageUrls }))
   
   try {
     const { content, imageUrls } = req.body || {}
 
     if (!content && (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0)) {
-      console.log(`[groups] POST /featured-posts/${postId}/comments - missing content/imageUrls`)
       return res.status(400).json({ error: 'missing content or imageUrls' })
     }
 
@@ -1053,18 +1037,15 @@ router.post('/featured-posts/:id/comments', requireAuth, async (req, res, next) 
     }
     
     if (!postRows || postRows.length === 0) {
-      console.log(`[groups] POST /featured-posts/${postId}/comments - post not found`)
       return res.status(404).json({ error: 'post not found' })
     }
 
     const post = postRows[0]
-    console.log(`[groups] Post found: ${post.title}, reply_permission: ${post.reply_permission}`)
 
     // 检查回复权限
     let permission
     try {
       permission = await checkReplyPermission(post, req.user.id)
-      console.log(`[groups] Permission check: canReply=${permission.canReply}, reason=${permission.reason || 'none'}`)
     } catch (permError) {
       console.error('[groups] Failed to check permission:', permError.message, permError.stack)
       return res.status(500).json({ error: 'permission check failed', detail: permError.message })
@@ -1078,7 +1059,6 @@ router.post('/featured-posts/:id/comments', requireAuth, async (req, res, next) 
     let moderationResult
     try {
       moderationResult = await moderateComment({ content, imageUrls })
-      console.log(`[groups] Moderation result: passed=${moderationResult.passed}, reason=${moderationResult.reason || 'none'}`)
     } catch (modError) {
       console.error('[groups] Failed to moderate content:', modError.message, modError.stack)
       return res.status(500).json({ error: 'content moderation failed', detail: modError.message })
@@ -1103,7 +1083,6 @@ router.post('/featured-posts/:id/comments', requireAuth, async (req, res, next) 
           0 // like_count - 初始为0
         ]
       )
-      console.log(`[groups] Comment inserted successfully for post ${postId}`)
     } catch (insertError) {
       console.error('[groups] Database error in featured-posts/:id/comments POST (insert):', insertError.message, insertError.stack)
       // 根据错误类型返回不同的错误信息
@@ -1123,7 +1102,6 @@ router.post('/featured-posts/:id/comments', requireAuth, async (req, res, next) 
 
     // 如果审核失败，返回错误信息
     if (!moderationResult.passed) {
-      console.log(`[groups] POST /featured-posts/${postId}/comments - moderation failed`)
       return res.status(400).json({ error: moderationResult.reason || '内容不符合规范' })
     }
 
@@ -1172,11 +1150,9 @@ router.post('/featured-posts/:id/comments', requireAuth, async (req, res, next) 
       }
     })
 
-    console.log(`[groups] POST /featured-posts/${postId}/comments - success, returning ${comments.length} comments`)
     res.json(comments)
   } catch (e) {
-    console.error('[groups] ERROR in POST featured-posts comments:', e.message)
-    console.error('[groups] Error stack:', e.stack)
+    console.error('[groups] ERROR in POST featured-posts comments:', e.message, e.stack)
     console.error('[groups] Request params:', JSON.stringify(req.params))
     console.error('[groups] Request body:', JSON.stringify(req.body))
     console.error('[groups] Request user:', req.user?.id)
@@ -1608,11 +1584,8 @@ router.get('/same-city/special-post/comments', requireAuth, async (req, res, nex
     
     const userRegion = me[0] && me[0].region
     if (!userRegion) {
-      console.log('[groups] GET /same-city/special-post/comments - user has no region')
       return res.json([])
     }
-
-    console.log(`[groups] GET /same-city/special-post/comments - user region: ${userRegion}`)
 
     // 查询所有同一地区的用户对该固定帖子的评论
     // 固定帖子的 post_id 为 NULL，group_type 为 'same-city'，通过 user_id 的 region 来判断
@@ -1632,7 +1605,6 @@ router.get('/same-city/special-post/comments', requireAuth, async (req, res, nex
          ORDER BY c.created_at DESC`,
         [userRegion]
       )
-      console.log(`[groups] GET /same-city/special-post/comments - found ${(rows || []).length} comments`)
     } catch (dbError) {
       console.error('[groups] Database error in same-city/special-post/comments GET:', dbError.message, dbError.stack)
       return res.status(500).json({ error: '数据库操作异常，请稍后重试', code: 'DB_ERROR' })
