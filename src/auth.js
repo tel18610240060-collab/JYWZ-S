@@ -1,5 +1,5 @@
 const { query, exec } = require('./db/query')
-const { v4: uuidv4 } = require('uuid')
+const { randomUUID } = require('crypto')
 const { config } = require('./config')
 
 function parseBearer(req) {
@@ -58,7 +58,7 @@ async function upsertUserByOpenid({ openid, unionid, nickname, avatarUrl }) {
 }
 
 async function createSession(userId) {
-  const token = uuidv4()
+  const token = randomUUID()
   const ttlDays = Math.max(1, config.SESSION_TTL_DAYS)
   await exec(
     'INSERT INTO sessions(token, user_id, expires_at) VALUES(?,?, DATE_ADD(NOW(), INTERVAL ? DAY))',

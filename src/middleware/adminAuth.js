@@ -1,12 +1,12 @@
 const { config } = require('../config')
-const { v4: uuidv4 } = require('uuid')
+const { randomUUID } = require('crypto')
 
 // 简单的内存存储（生产环境应使用Redis或数据库）
 const adminTokens = new Map()
 
 // 生成管理员token
 function generateAdminToken() {
-  const token = uuidv4()
+  const token = randomUUID()
   const expiresAt = Date.now() + 24 * 60 * 60 * 1000 // 24小时
   adminTokens.set(token, { expiresAt })
   return token
