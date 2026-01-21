@@ -7,7 +7,7 @@ function env(name, def = '') {
 
 const config = {
   NODE_ENV: env('NODE_ENV', 'development'),
-  PORT: Number(env('PORT', '8787')),
+  PORT: Number(env('PORT', '8000')),
   MODE: env('MODE', 'mock'), // mock | prod
 
   // Douyin code2session

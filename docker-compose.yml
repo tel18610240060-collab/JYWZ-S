@@ -3,7 +3,7 @@ services:
     build: .
     restart: unless-stopped
     environment:
-      PORT: 8787
+      PORT: 8000
       MODE: mock
       DB_HOST: 115.190.254.98
       DB_PORT: 3306
@@ -13,7 +13,7 @@ services:
       IS_SANDBOX: 1
       # prod 时需要：DOUYIN_APPID/DOUYIN_SECRET
     ports:
-      - "8787:8787"
+      - "8000:8000"
     volumes:
       - ./public/uploads:/app/public/uploads
     command: ["sh","-lc","node index.js"]
