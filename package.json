@@ -1,0 +1,22 @@
+{
+  "name": "tt-miniapp-server",
+  "version": "1.1.0",
+  "description": "quit-smoking-king backend for douyin miniapp (mysql persisted)",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js",
+    "migrate": "node scripts/migrate.js",
+    "clean-and-regenerate": "node scripts/cleanAndRegenerate.js",
+    "update-last-checkin": "node scripts/updateLastCheckinDate.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "multer": "^2.0.2",
+    "mysql2": "^3.16.0",
+    "node-cron": "^4.2.1",
+    "uuid": "^13.0.0"
+  }
+}

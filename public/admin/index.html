@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 - 戒烟王者</title>
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- 侧边栏 -->
+    <div class="admin-sidebar">
+      <div class="sidebar-logo">戒烟王者</div>
+      <nav class="sidebar-menu">
+        <a href="#dashboard" class="menu-item active" data-page="dashboard">仪表盘</a>
+        <a href="#users" class="menu-item" data-page="users">用户管理</a>
+        <a href="#checkins" class="menu-item" data-page="checkins">打卡管理</a>
+        <a href="#content" class="menu-item" data-page="content">内容管理</a>
+        <a href="#stats" class="menu-item" data-page="stats">数据统计</a>
+        <a href="#system" class="menu-item" data-page="system">系统管理</a>
+      </nav>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="admin-main">
+      <!-- 顶部导航 -->
+      <div class="admin-header">
+        <div>
+          <h2 id="pageTitle">仪表盘</h2>
+        </div>
+        <div>
+          <button class="btn btn-default" onclick="logout()">退出登录</button>
+        </div>
+      </div>
+
+      <!-- 内容区 -->
+      <div class="admin-content">
+        <!-- 仪表盘 -->
+        <div id="page-dashboard" class="page-content">
+          <div class="stats-grid" id="overviewStats"></div>
+          <div class="card">
+            <div class="card-title">段位分布</div>
+            <canvas id="rankChart" height="300"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">用户增长趋势</div>
+            <canvas id="userTrendChart" height="300"></canvas>
+          </div>
+        </div>
+
+        <!-- 用户管理 -->
+        <div id="page-users" class="page-content" style="display:none;">
+          <div class="card">
+            <div class="card-title">用户列表</div>
+            <div style="margin-bottom: 16px;">
+              <input type="text" id="userSearch" class="form-control" placeholder="搜索昵称或OpenID" style="max-width: 300px; display: inline-block;">
+              <select id="userRankFilter" class="form-control" style="max-width: 150px; display: inline-block; margin-left: 8px;">
+                <option value="">全部段位</option>
+                <option value="失败">失败</option>
+                <option value="倔强青铜">倔强青铜</option>
+                <option value="秩序白银">秩序白银</option>
+                <option value="荣耀黄金">荣耀黄金</option>
+                <option value="尊贵铂金">尊贵铂金</option>
+                <option value="永恒钻石">永恒钻石</option>
+                <option value="至尊星耀">至尊星耀</option>
+                <option value="最强王者">最强王者</option>
+                <option value="荣耀王者">荣耀王者</option>
+              </select>
+              <button class="btn btn-primary ml-8" onclick="loadUsers()">搜索</button>
+            </div>
+            <div class="table-container">
+              <table id="usersTable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>昵称</th>
+                    <th>戒烟日期</th>
+                    <th>累计天数</th>
+                    <th>失败次数</th>
+                    <th>段位</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="usersPagination"></div>
+          </div>
+        </div>
+
+        <!-- 打卡管理 -->
+        <div id="page-checkins" class="page-content" style="display:none;">
+          <div class="card">
+            <div class="card-title">打卡记录</div>
+            <div style="margin-bottom: 16px;">
+              <input type="date" id="checkinDateFrom" class="form-control" style="max-width: 150px; display: inline-block;">
+              <span style="margin: 0 8px;">至</span>
+              <input type="date" id="checkinDateTo" class="form-control" style="max-width: 150px; display: inline-block;">
+              <button class="btn btn-primary ml-8" onclick="loadCheckins()">筛选</button>
+            </div>
+            <div class="table-container">
+              <table id="checkinsTable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>用户</th>
+                    <th>打卡日期</th>
+                    <th>心情</th>
+                    <th>笔记</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="checkinsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="checkinsPagination"></div>
+          </div>
+        </div>
+
+        <!-- 内容管理 -->
+        <div id="page-content" class="page-content" style="display:none;">
+          <div class="card">
+            <div class="card-title">帖子管理</div>
+            <div class="table-container">
+              <table id="postsTable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>标题</th>
+                    <th>作者</th>
+                    <th>群组</th>
+                    <th>评论数</th>
+                    <th>收藏数</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="postsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="postsPagination"></div>
+          </div>
+        </div>
+
+        <!-- 数据统计 -->
+        <div id="page-stats" class="page-content" style="display:none;">
+          <div class="card">
+            <div class="card-title">同日戒烟统计</div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>戒烟日期</th>
+                    <th>总数</th>
+                    <th>失败</th>
+                    <th>幸存</th>
+                    <th>平均天数</th>
+                  </tr>
+                </thead>
+                <tbody id="sameDayStatsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 系统管理 -->
+        <div id="page-system" class="page-content" style="display:none;">
+          <div class="card">
+            <div class="card-title">数据导出</div>
+            <div>
+              <button class="btn btn-primary" onclick="exportData('users', 'json')">导出用户(JSON)</button>
+              <button class="btn btn-primary ml-8" onclick="exportData('users', 'csv')">导出用户(CSV)</button>
+              <button class="btn btn-primary ml-8" onclick="exportData('checkins', 'json')">导出打卡(JSON)</button>
+              <button class="btn btn-primary ml-8" onclick="exportData('posts', 'json')">导出帖子(JSON)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 用户详情模态框 -->
+  <div id="userModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">用户详情</h3>
+        <button class="modal-close" onclick="closeUserModal()">&times;</button>
+      </div>
+      <div id="userModalBody"></div>
+    </div>
+  </div>
+
+  <script src="/admin/js/api.js"></script>
+  <script src="/admin/js/admin.js"></script>
+</body>
+</html>
