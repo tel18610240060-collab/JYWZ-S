@@ -1439,30 +1439,31 @@ router.post('/comments/:id/like', requireAuth, async (req, res, next) => {
 
 // ========== 同城戒烟小组接口 ==========
 
-// 同城戒烟小组：以 region 作为标识
+// 同城戒烟小组：以 city 或 region 作为标识
 router.get('/same-city/summary', requireAuth, async (req, res, next) => {
   try {
-    const me = await query('SELECT region FROM users WHERE id=? LIMIT 1', [req.user.id])
-    const userRegion = me[0] && me[0].region
+    const me = await query('SELECT city, region FROM users WHERE id=? LIMIT 1', [req.user.id])
+    // 优先使用 city，如果没有则使用 region
+    const userRegion = (me[0] && me[0].city) || (me[0] && me[0].region)
     if (!userRegion) {
       return res.json({ group_key: null, total: 0, active: 0, failed: 0, reduction: 0 })
     }
 
-    // 统计总数：同城所有用户
-    const totalRows = await query('SELECT COUNT(*) AS c FROM users WHERE region=?', [userRegion])
+    // 统计总数：同城所有用户（匹配 city 或 region）
+    const totalRows = await query('SELECT COUNT(*) AS c FROM users WHERE city=? OR region=?', [userRegion, userRegion])
     const total = Number(totalRows[0]?.c || 0)
 
     // 统计失败数：同城且累计打卡天数为0的用户
     const failedRows = await query(
-      'SELECT COUNT(*) AS c FROM users WHERE region=? AND total_checkin_days=0',
-      [userRegion]
+      'SELECT COUNT(*) AS c FROM users WHERE (city=? OR region=?) AND total_checkin_days=0',
+      [userRegion, userRegion]
     )
     const failed = Number(failedRows[0]?.c || 0)
 
     // 统计活跃数：同城且累计打卡天数>0的用户
     const activeRows = await query(
-      'SELECT COUNT(*) AS c FROM users WHERE region=? AND total_checkin_days>0',
-      [userRegion]
+      'SELECT COUNT(*) AS c FROM users WHERE (city=? OR region=?) AND total_checkin_days>0',
+      [userRegion, userRegion]
     )
     const active = Number(activeRows[0]?.c || 0)
 
@@ -1487,13 +1488,14 @@ router.get('/same-city/posts', requireAuth, async (req, res, next) => {
   try {
     let me
     try {
-      me = await query('SELECT region FROM users WHERE id=? LIMIT 1', [req.user.id])
+      me = await query('SELECT city, region FROM users WHERE id=? LIMIT 1', [req.user.id])
     } catch (dbError) {
       console.error('[groups] Database error in same-city/posts (query user):', dbError.message, dbError.stack)
       return res.status(500).json({ error: '数据库操作异常，请稍后重试', code: 'DB_ERROR' })
     }
     
-    const userRegion = me[0] && me[0].region
+    // 优先使用 city，如果没有则使用 region
+    const userRegion = (me[0] && me[0].city) || (me[0] && me[0].region)
     if (!userRegion) {
       // 如果没有地区信息，只返回固定帖子
       const specialPost = {
@@ -1511,18 +1513,18 @@ router.get('/same-city/posts', requireAuth, async (req, res, next) => {
       return res.json([specialPost])
     }
 
-    // 查询同城所有用户的帖子（通过user_id的region来判断）
-    // 注意：这里需要join users表来过滤region
+    // 查询同城所有用户的帖子（通过user_id的city或region来判断）
+    // 注意：这里需要join users表来过滤city或region
     let rows
     try {
       rows = await query(
         `SELECT p.*, u.nickname, u.avatar_url
          FROM posts p
          JOIN users u ON u.id=p.user_id
-         WHERE u.region=?
+         WHERE u.city=? OR u.region=?
          ORDER BY COALESCE(p.last_reply_at, p.created_at) DESC
          LIMIT 100`,
-        [userRegion]
+        [userRegion, userRegion]
       )
     } catch (dbError) {
       console.error('[groups] Database error in same-city/posts (query posts):', dbError.message, dbError.stack)
@@ -1550,10 +1552,10 @@ router.get('/same-city/posts', requireAuth, async (req, res, next) => {
          FROM comments c
          JOIN users u ON u.id=c.user_id
          WHERE c.post_id IS NULL 
-         AND u.region = ?
+         AND (u.city = ? OR u.region = ?)
          AND c.moderation_status='approved'
          LIMIT 1`,
-        [userRegion]
+        [userRegion, userRegion]
       )
       if (latestReplyRows && latestReplyRows.length > 0 && latestReplyRows[0].last_reply_at) {
         specialPost.last_reply_at = latestReplyRows[0].last_reply_at
@@ -1573,22 +1575,23 @@ router.get('/same-city/posts', requireAuth, async (req, res, next) => {
 // 同城固定帖子的评论接口
 router.get('/same-city/special-post/comments', requireAuth, async (req, res, next) => {
   try {
-    // 获取当前用户的地区
+    // 获取当前用户的地区（优先使用 city，如果没有则使用 region）
     let me
     try {
-      me = await query('SELECT region FROM users WHERE id=? LIMIT 1', [req.user.id])
+      me = await query('SELECT city, region FROM users WHERE id=? LIMIT 1', [req.user.id])
     } catch (dbError) {
       console.error('[groups] Database error in same-city/special-post/comments GET (query user):', dbError.message, dbError.stack)
       return res.status(500).json({ error: '数据库操作异常，请稍后重试', code: 'DB_ERROR' })
     }
     
-    const userRegion = me[0] && me[0].region
+    // 优先使用 city，如果没有则使用 region
+    const userRegion = (me[0] && me[0].city) || (me[0] && me[0].region)
     if (!userRegion) {
       return res.json([])
     }
 
     // 查询所有同一地区的用户对该固定帖子的评论
-    // 固定帖子的 post_id 为 NULL，group_type 为 'same-city'，通过 user_id 的 region 来判断
+    // 固定帖子的 post_id 为 NULL，group_type 为 'same-city'，通过 user_id 的 city 或 region 来判断
     let rows
     try {
       rows = await query(
@@ -1599,11 +1602,11 @@ router.get('/same-city/special-post/comments', requireAuth, async (req, res, nex
          JOIN users u ON u.id=c.user_id
          WHERE c.post_id IS NULL 
          AND c.group_type = 'same-city'
-         AND u.region = ?
+         AND (u.city = ? OR u.region = ?)
          AND c.moderation_status='approved'
          AND c.parent_comment_id IS NULL
          ORDER BY c.created_at DESC`,
-        [userRegion]
+        [userRegion, userRegion]
       )
     } catch (dbError) {
       console.error('[groups] Database error in same-city/special-post/comments GET:', dbError.message, dbError.stack)
@@ -1672,18 +1675,19 @@ router.get('/same-city/special-post/comments', requireAuth, async (req, res, nex
 
 router.post('/same-city/special-post/comments', requireAuth, async (req, res, next) => {
   try {
-    // 获取当前用户的地区
+    // 获取当前用户的地区（优先使用 city，如果没有则使用 region）
     let me
     try {
-      me = await query('SELECT region FROM users WHERE id=? LIMIT 1', [req.user.id])
+      me = await query('SELECT city, region FROM users WHERE id=? LIMIT 1', [req.user.id])
     } catch (dbError) {
       console.error('[groups] Database error in same-city/special-post/comments POST (query user):', dbError.message, dbError.stack)
       return res.status(500).json({ error: '数据库操作异常，请稍后重试', code: 'DB_ERROR' })
     }
     
-    const userRegion = me[0] && me[0].region
+    // 优先使用 city，如果没有则使用 region
+    const userRegion = (me[0] && me[0].city) || (me[0] && me[0].region)
     if (!userRegion) {
-      return res.status(400).json({ error: '请先设置地区信息' })
+      return res.status(400).json({ error: '请先设置城市信息' })
     }
 
     const { content, imageUrls } = req.body || {}
@@ -1735,11 +1739,11 @@ router.post('/same-city/special-post/comments', requireAuth, async (req, res, ne
          JOIN users u ON u.id=c.user_id
          WHERE c.post_id IS NULL 
          AND c.group_type = 'same-city'
-         AND u.region = ?
+         AND (u.city = ? OR u.region = ?)
          AND c.moderation_status='approved'
          AND c.parent_comment_id IS NULL
          ORDER BY c.created_at DESC`,
-        [userRegion]
+        [userRegion, userRegion]
       )
     } catch (dbError) {
       console.error('[groups] Database error in same-city/special-post/comments POST (query):', dbError.message, dbError.stack)

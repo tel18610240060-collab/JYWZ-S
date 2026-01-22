@@ -40,16 +40,40 @@ router.get('/', requireAuth, async (req, res, next) => {
     )
     
     // 解析JSON字段
-    const data = rows.map(row => ({
-      checkin_date: row.checkin_date,
-      mood: row.mood,
-      note: row.note,
-      image_urls: row.image_urls ? JSON.parse(row.image_urls) : null,
-      created_at: row.created_at
-    }))
+    const data = rows.map(row => {
+      try {
+        let imageUrls = null
+        if (row.image_urls) {
+          // image_urls 可能是字符串或已经是对象
+          if (typeof row.image_urls === 'string') {
+            imageUrls = JSON.parse(row.image_urls)
+          } else {
+            imageUrls = row.image_urls
+          }
+        }
+        return {
+          checkin_date: row.checkin_date,
+          mood: row.mood,
+          note: row.note,
+          image_urls: imageUrls,
+          created_at: row.created_at
+        }
+      } catch (parseError) {
+        console.error('[checkins] Failed to parse image_urls:', row.image_urls, parseError)
+        return {
+          checkin_date: row.checkin_date,
+          mood: row.mood,
+          note: row.note,
+          image_urls: null,
+          created_at: row.created_at
+        }
+      }
+    })
     
     res.json(data)
   } catch (e) {
+    console.error('[checkins] GET error:', e.message)
+    console.error('[checkins] GET error stack:', e.stack)
     next(e)
   }
 })
@@ -101,8 +125,11 @@ router.post('/', requireAuth, async (req, res, next) => {
       [totalCheckinDays, latestDate, req.user.id]
     )
     
+    console.log('[checkins] POST success, checkin_date:', checkinDate, 'total_checkin_days:', totalCheckinDays)
     res.json({ ok: true, checkin_date: checkinDate, total_checkin_days: totalCheckinDays })
   } catch (e) {
+    console.error('[checkins] POST error:', e.message)
+    console.error('[checkins] POST error stack:', e.stack)
     next(e)
   }
 })

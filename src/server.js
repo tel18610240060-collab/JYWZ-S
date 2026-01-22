@@ -11,6 +11,7 @@ const friendRoutes = require('./routes/friends')
 const douyinRoutes = require('./routes/douyin')
 const adminRoutes = require('./routes/admin')
 const uploadRoutes = require('./routes/upload')
+const logRoutes = require('./routes/log')
 
 function createApp() {
   const app = express()
@@ -50,6 +51,7 @@ function createApp() {
   app.use('/api/douyin', douyinRoutes)
   app.use('/api/admin', adminRoutes)
   app.use('/api/upload', uploadRoutes)
+  app.use('/api/log', logRoutes)
 
   // 兼容旧接口：/api/user/upsert（小程序旧版本）
   app.post('/api/user/upsert', async (req, res) => {

@@ -38,20 +38,45 @@ async function requireAuth(req, res, next) {
   }
 }
 
-async function upsertUserByOpenid({ openid, unionid, nickname, avatarUrl }) {
+async function upsertUserByOpenid({ openid, unionid, nickname, avatarUrl, phoneNumber }) {
   const existing = await query('SELECT * FROM users WHERE openid = ? LIMIT 1', [openid])
   if (existing.length) {
-    await exec(
-      'UPDATE users SET unionid=?, nickname=?, avatar_url=? WHERE openid=?',
-      [unionid || null, nickname || existing[0].nickname, avatarUrl || existing[0].avatar_url, openid]
-    )
+    // 更新用户信息，如果提供了手机号则更新
+    const updateFields = []
+    const updateValues = []
+    
+    if (unionid !== undefined) {
+      updateFields.push('unionid=?')
+      updateValues.push(unionid || null)
+    }
+    if (nickname !== undefined) {
+      updateFields.push('nickname=?')
+      updateValues.push(nickname || existing[0].nickname)
+    }
+    if (avatarUrl !== undefined) {
+      updateFields.push('avatar_url=?')
+      updateValues.push(avatarUrl || existing[0].avatar_url)
+    }
+    if (phoneNumber !== undefined && phoneNumber !== null) {
+      updateFields.push('phone_number=?')
+      updateValues.push(phoneNumber)
+    }
+    
+    if (updateFields.length > 0) {
+      updateValues.push(openid)
+      await exec(
+        `UPDATE users SET ${updateFields.join(', ')} WHERE openid=?`,
+        updateValues
+      )
+    }
+    
     const u = await query('SELECT * FROM users WHERE openid = ? LIMIT 1', [openid])
     return u[0]
   }
 
   await exec(
-    'INSERT INTO users(openid, unionid, nickname, avatar_url) VALUES(?,?,?,?)',
-    [openid, unionid || null, nickname || '未命名用户', avatarUrl || '']
+    'INSERT INTO users(openid, unionid, nickname, avatar_url, phone_number) VALUES(?,?,?,?,?)',
+    [openid, unionid || null, nickname || '未命名用户', avatarUrl || '', phoneNumber || null]
   )
   const u = await query('SELECT * FROM users WHERE openid = ? LIMIT 1', [openid])
   return u[0]

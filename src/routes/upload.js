@@ -39,18 +39,39 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     // 只允许图片文件
     const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    console.log('[upload] File received:', file.originalname, 'mimetype:', file.mimetype)
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true)
     } else {
+      console.error('[upload] Invalid file type:', file.mimetype)
       cb(new Error('只支持图片文件（jpg、png、gif、webp）'))
     }
   }
 })
 
 // 图片上传接口
-router.post('/image', requireAuth, upload.single('file'), (req, res, next) => {
+router.post('/image', requireAuth, (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      // 处理 multer 错误
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: '文件大小超过限制（最大10MB）' })
+        }
+        console.error('[upload] Multer error:', err.code, err.message)
+        return res.status(400).json({ error: '文件上传错误：' + err.message })
+      }
+      // 处理其他错误（如 fileFilter 中的错误）
+      console.error('[upload] Upload error:', err.message)
+      return res.status(400).json({ error: err.message || '文件上传失败' })
+    }
+    // 没有错误，继续处理
+    next()
+  })
+}, (req, res, next) => {
   try {
     if (!req.file) {
+      console.error('[upload] No file received')
       return res.status(400).json({ error: '未上传文件' })
     }
 
@@ -59,18 +80,24 @@ router.post('/image', requireAuth, upload.single('file'), (req, res, next) => {
     const fileExists = fs.existsSync(filePath)
     
     if (!fileExists) {
+      console.error('[upload] File save failed:', filePath)
       return res.status(500).json({ error: '文件保存失败' })
     }
 
     // 返回图片URL（相对于public目录的路径）
     const imageUrl = `/uploads/${req.file.filename}`
     
+    console.log('[upload] File uploaded successfully:', req.file.filename, 'size:', req.file.size)
+    
+    // 确保返回正确的Content-Type头，避免抖音小程序解析错误
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.json({ 
       url: imageUrl,
       filename: req.file.filename,
       size: req.file.size
     })
   } catch (e) {
+    console.error('[upload] Error:', e.message || e)
     next(e)
   }
 })

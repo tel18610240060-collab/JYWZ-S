@@ -157,7 +157,13 @@ async function code2session(code) {
     return { openid: 'mock_openid', unionid: 'mock_unionid', session_key: 'mock_session_key' }
   }
 
+  console.log('[douyin] code2session 调用，MODE:', config.MODE)
+  console.log('[douyin] DOUYIN_APPID:', config.DOUYIN_APPID ? config.DOUYIN_APPID.substring(0, 10) + '...' : 'empty')
+  console.log('[douyin] DOUYIN_SECRET:', config.DOUYIN_SECRET ? '***' : 'empty')
+  console.log('[douyin] IS_SANDBOX:', config.IS_SANDBOX)
+
   if (!config.DOUYIN_APPID || !config.DOUYIN_SECRET) {
+    console.error('[douyin] 缺少 DOUYIN_APPID 或 DOUYIN_SECRET')
     const err = new Error('missing DOUYIN_APPID/DOUYIN_SECRET')
     err.statusCode = 500
     throw err
@@ -166,6 +172,8 @@ async function code2session(code) {
   const hostname = config.IS_SANDBOX === '1' ? 'open-sandbox.douyin.com' : 'developer.toutiao.com'
   const path = '/api/apps/v2/jscode2session'
 
+  console.log('[douyin] 调用抖音 API，hostname:', hostname, 'path:', path)
+  
   const { data } = await postJsonHttps({
     hostname,
     path,
@@ -177,7 +185,10 @@ async function code2session(code) {
     }
   })
 
+  console.log('[douyin] 抖音 API 响应，err_no:', data.err_no, 'err_tips:', data.err_tips)
+
   if (data.err_no && data.err_no !== 0) {
+    console.error('[douyin] code2session 失败，err_no:', data.err_no, 'err_tips:', data.err_tips)
     const err = new Error(data.err_tips || 'code2session failed')
     err.statusCode = 502
     err.detail = data
@@ -358,10 +369,52 @@ async function getFansList({ accessToken, openId, cursor = 0, count = 50 }) {
   return d
 }
 
+// 获取手机号（新方式，基础库 >=3.51.0）
+// 注意：此接口需要应用公钥/私钥RSA加密，实现较复杂
+// 建议优先使用旧方式（encryptedData + iv 解密）
+async function getPhoneNumber(phoneCode) {
+  if (config.MODE === 'mock') {
+    return { phoneNumber: '13800138000', purePhoneNumber: '13800138000', countryCode: '86' }
+  }
+
+  // 新方式需要RSA加密等复杂处理，暂时返回错误提示使用旧方式
+  const err = new Error('新方式获取手机号需要RSA加密，请使用旧方式（encryptedData + iv）')
+  err.statusCode = 400
+  throw err
+}
+
+// 解密手机号（旧方式，使用 encryptedData + iv）
+function decryptPhoneNumber(encryptedData, iv, sessionKey) {
+  const crypto = require('crypto')
+  
+  try {
+    const key = Buffer.from(sessionKey, 'base64')
+    const ivBuf = Buffer.from(iv, 'base64')
+    const encryptedBuf = Buffer.from(encryptedData, 'base64')
+    
+    const decipher = crypto.createDecipheriv('aes-128-cbc', key, ivBuf)
+    decipher.setAutoPadding(true)
+    
+    let decoded = decipher.update(encryptedBuf, undefined, 'utf8')
+    decoded += decipher.final('utf8')
+    
+    const dataObj = JSON.parse(decoded)
+    return {
+      phoneNumber: dataObj.phoneNumber,
+      purePhoneNumber: dataObj.purePhoneNumber,
+      countryCode: dataObj.countryCode || '86'
+    }
+  } catch (e) {
+    throw new Error('解密手机号失败: ' + e.message)
+  }
+}
+
 module.exports = {
   code2session,
   exchangeOpenAuthTicket,
   refreshAccessToken,
   getFollowingList,
-  getFansList
+  getFansList,
+  getPhoneNumber,
+  decryptPhoneNumber
 }
