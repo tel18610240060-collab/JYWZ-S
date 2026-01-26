@@ -4,14 +4,15 @@ services:
     restart: unless-stopped
     environment:
       PORT: 8000
-      MODE: mock
+      MODE: prod
       DB_HOST: 115.190.254.98
       DB_PORT: 3306
       DB_USER: jywz
       DB_PASSWORD: jywz1234!
       DB_NAME: quit_smoking_king
       IS_SANDBOX: 1
-      # prod 时需要：DOUYIN_APPID/DOUYIN_SECRET
+      DOUYIN_APPID: tt6a721ccff411a90a01
+      DOUYIN_SECRET: 88859a0404cbd5d92444cec9961d6ce0e8025852
     ports:
       - "8000:8000"
     volumes:

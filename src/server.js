@@ -16,6 +16,8 @@ const logRoutes = require('./routes/log')
 function createApp() {
   const app = express()
 
+  // 注意：uploadFile 使用的是 multipart/form-data，不需要 express.json 中间件
+  // 但其他API路由需要，所以保留
   app.use(express.json({ limit: '1mb' }))
 
   // 请求日志中间件（记录方法和路径，以及响应状态码）
@@ -66,6 +68,7 @@ function createApp() {
 
   // 404 handler（必须在所有路由和静态文件中间件之后）
   app.use((req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.status(404).json({ error: `Cannot ${req.method} ${req.path}` })
   })
 
@@ -73,6 +76,8 @@ function createApp() {
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
     const status = err.statusCode || 500
+    // 确保错误响应也是JSON格式
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.status(status).json({ error: err.message || 'server error', detail: err.detail })
   })
 

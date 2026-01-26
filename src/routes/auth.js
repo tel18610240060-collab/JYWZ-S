@@ -68,6 +68,13 @@ router.post('/login', async (req, res, next) => {
         console.warn('[auth/login] 新方式获取手机号暂不支持，请使用旧方式')
       }
 
+      console.log('[auth/login] 准备保存用户信息:')
+      console.log('[auth/login] - openid:', s.openid ? s.openid.substring(0, 10) + '...' : 'empty')
+      console.log('[auth/login] - unionid:', s.unionid || 'none')
+      console.log('[auth/login] - nickname:', nickname)
+      console.log('[auth/login] - avatarUrl:', avatarUrl ? avatarUrl.substring(0, 50) + '...' : 'empty')
+      console.log('[auth/login] - phoneNumber:', phoneNumber ? phoneNumber.substring(0, 3) + '****' : 'none')
+      
       const user = await upsertUserByOpenid({
         openid: s.openid,
         unionid: s.unionid,
@@ -75,6 +82,13 @@ router.post('/login', async (req, res, next) => {
         avatarUrl,
         phoneNumber
       })
+      
+      console.log('[auth/login] 用户保存结果:')
+      console.log('[auth/login] - user.id:', user.id)
+      console.log('[auth/login] - user.openid:', user.openid ? user.openid.substring(0, 10) + '...' : 'empty')
+      console.log('[auth/login] - user.nickname:', user.nickname)
+      console.log('[auth/login] - user.avatar_url:', user.avatar_url ? user.avatar_url.substring(0, 50) + '...' : 'empty')
+      console.log('[auth/login] - user.phone_number:', user.phone_number ? user.phone_number.substring(0, 3) + '****' : 'none')
 
       const token = await createSession(user.id)
       console.log('[auth/login] 登录成功，user_id:', user.id, 'phoneNumber:', phoneNumber ? '***' : 'none')
