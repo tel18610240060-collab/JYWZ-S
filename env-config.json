@@ -1,0 +1,16 @@
+{
+  "PORT": "8000",
+  "MODE": "prod",
+  "DOUYIN_APPID": "tt6a721ccff411a90a01",
+  "DOUYIN_SECRET": "88859a0404cbd5d92444cec9961d6ce0e8025852",
+  "IS_SANDBOX": "1",
+  "DB_HOST": "115.190.254.98",
+  "DB_PORT": "3306",
+  "DB_USER": "jywz",
+  "DB_PASSWORD": "jywz1234!",
+  "DB_NAME": "quit_smoking_king",
+  "DB_CONN_LIMIT": "10",
+  "SESSION_TTL_DAYS": "30",
+  "ENABLE_DOUYIN_RELATION": "1",
+  "NODE_ENV": "production"
+}

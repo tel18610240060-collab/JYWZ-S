@@ -91,8 +91,12 @@ router.post('/login', async (req, res, next) => {
       console.log('[auth/login] - user.phone_number:', user.phone_number ? user.phone_number.substring(0, 3) + '****' : 'none')
 
       const token = await createSession(user.id)
-      console.log('[auth/login] 登录成功，user_id:', user.id, 'phoneNumber:', phoneNumber ? '***' : 'none')
-      res.json({ token, user })
+      
+      // 判断是否为新用户：检查 quit_date 是否为空
+      const isNewUser = !user.quit_date || user.quit_date.trim() === ''
+      
+      console.log('[auth/login] 登录成功，user_id:', user.id, 'phoneNumber:', phoneNumber ? '***' : 'none', 'isNewUser:', isNewUser)
+      res.json({ token, user, isNewUser })
     } catch (code2sessionError) {
       console.error('[auth/login] code2session 失败:')
       console.error('[auth/login] error message:', code2sessionError.message)

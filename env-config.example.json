@@ -1,0 +1,35 @@
+{
+  "description": "抖音云托管环境变量配置示例",
+  "config": {
+    "PORT": "8000",
+    "MODE": "prod",
+    "DOUYIN_APPID": "your-douyin-appid",
+    "DOUYIN_SECRET": "your-douyin-secret",
+    "IS_SANDBOX": "1",
+    "DB_HOST": "your-db-host",
+    "DB_PORT": "3306",
+    "DB_USER": "your-db-user",
+    "DB_PASSWORD": "your-db-password",
+    "DB_NAME": "your-db-name",
+    "DB_CONN_LIMIT": "10",
+    "SESSION_TTL_DAYS": "30",
+    "ENABLE_DOUYIN_RELATION": "1",
+    "NODE_ENV": "production"
+  },
+  "说明": {
+    "PORT": "服务端口，默认8000",
+    "MODE": "运行模式：mock（模拟）| prod（生产）",
+    "DOUYIN_APPID": "抖音小程序AppID",
+    "DOUYIN_SECRET": "抖音小程序AppSecret",
+    "IS_SANDBOX": "是否沙盒环境：1（沙盒）| 0（生产）",
+    "DB_HOST": "MySQL数据库主机地址",
+    "DB_PORT": "MySQL数据库端口",
+    "DB_USER": "MySQL数据库用户名",
+    "DB_PASSWORD": "MySQL数据库密码",
+    "DB_NAME": "MySQL数据库名称",
+    "DB_CONN_LIMIT": "数据库连接池最大连接数",
+    "SESSION_TTL_DAYS": "Session过期天数",
+    "ENABLE_DOUYIN_RELATION": "是否启用抖音关系链：1（启用）| 0（禁用）",
+    "NODE_ENV": "Node.js环境：development（开发）| production（生产）"
+  }
+}
