@@ -79,12 +79,9 @@ router.post('/login', async (req, res, next) => {
       console.log('[auth/login] - nickname:', nickname)
       console.log('[auth/login] - avatarUrl:', avatarUrl ? avatarUrl.substring(0, 50) + '...' : 'empty')
       console.log('[auth/login] - phoneNumber:', phoneNumber ? phoneNumber.substring(0, 3) + '****' : 'none')
-
-      // 按 openid 判断新老用户：数据库中已存在该 openid 则为老用户
-      const existingByOpenid = await query('SELECT id FROM users WHERE openid = ? LIMIT 1', [s.openid])
-      const isNewUser = !existingByOpenid || existingByOpenid.length === 0
       
-      const user = await upsertUserByOpenid({
+      // 按 openid 判断新老用户：upsertUserByOpenid 内部会查询并返回 isNewUser
+      const { user, isNewUser } = await upsertUserByOpenid({
         openid: s.openid,
         unionid: s.unionid,
         ...(nickname !== undefined && { nickname }),

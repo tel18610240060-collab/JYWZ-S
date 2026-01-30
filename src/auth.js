@@ -54,7 +54,8 @@ async function upsertUserByOpenid({ openid, unionid, nickname, avatarUrl, phoneN
   }
   
   const existing = await query('SELECT * FROM users WHERE openid = ? LIMIT 1', [openid])
-  console.log('[auth/upsertUserByOpenid] 查询现有用户，结果数量:', existing.length)
+  const isNewUser = !existing || existing.length === 0
+  console.log('[auth/upsertUserByOpenid] 查询现有用户，结果数量:', existing.length, 'isNewUser:', isNewUser)
   
   if (existing.length) {
     console.log('[auth/upsertUserByOpenid] 用户已存在，准备更新，当前用户ID:', existing[0].id)
@@ -94,7 +95,7 @@ async function upsertUserByOpenid({ openid, unionid, nickname, avatarUrl, phoneN
     
     const u = await query('SELECT * FROM users WHERE openid = ? LIMIT 1', [openid])
     console.log('[auth/upsertUserByOpenid] 更新后查询用户，用户ID:', u[0]?.id)
-    return u[0]
+    return { user: u[0], isNewUser: false }
   }
 
   console.log('[auth/upsertUserByOpenid] 用户不存在，准备插入新用户')
@@ -114,7 +115,7 @@ async function upsertUserByOpenid({ openid, unionid, nickname, avatarUrl, phoneN
   
   const u = await query('SELECT * FROM users WHERE openid = ? LIMIT 1', [openid])
   console.log('[auth/upsertUserByOpenid] 插入后查询用户，用户ID:', u[0]?.id)
-  return u[0]
+  return { user: u[0], isNewUser: true }
 }
 
 async function createSession(userId) {
