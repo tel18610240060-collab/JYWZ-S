@@ -16,6 +16,7 @@ router.get('/me', requireAuth, async (req, res, next) => {
 router.put('/me', requireAuth, async (req, res, next) => {
   try {
     const body = req.body || {}
+    console.log('[users] PUT /me body:', JSON.stringify(body))
     const fields = {
       nickname: body.nickname,
       avatar_url: body.avatar_url,

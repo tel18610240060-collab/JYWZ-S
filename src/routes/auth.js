@@ -34,8 +34,13 @@ router.post('/login', async (req, res, next) => {
       const s = await code2session(code)
       console.log('[auth/login] code2session 成功，openid:', s.openid ? s.openid.substring(0, 10) + '...' : 'empty')
       
-      const nickname = (userInfo && (userInfo.nickName || userInfo.nickname)) || '未命名用户'
-      const avatarUrl = (userInfo && (userInfo.avatarUrl || userInfo.avatar_url)) || ''
+      // 仅当前端传了 userInfo 时才更新昵称/头像，否则保留库内已有（避免 getUserProfile 失败时覆盖老用户）
+      const nickname = (userInfo && (userInfo.nickName || userInfo.nickname) && String(userInfo.nickName || userInfo.nickname).trim())
+        ? (userInfo.nickName || userInfo.nickname)
+        : undefined
+      const avatarUrl = (userInfo && (userInfo.avatarUrl || userInfo.avatar_url) && String(userInfo.avatarUrl || userInfo.avatar_url).trim())
+        ? (userInfo.avatarUrl || userInfo.avatar_url)
+        : undefined
       
       // 处理手机号（优先使用旧方式：encryptedData + iv 解密）
       let phoneNumber = null
@@ -78,9 +83,9 @@ router.post('/login', async (req, res, next) => {
       const user = await upsertUserByOpenid({
         openid: s.openid,
         unionid: s.unionid,
-        nickname,
-        avatarUrl,
-        phoneNumber
+        ...(nickname !== undefined && { nickname }),
+        ...(avatarUrl !== undefined && { avatarUrl }),
+        ...(phoneNumber !== undefined && phoneNumber !== null && { phoneNumber })
       })
       
       console.log('[auth/login] 用户保存结果:')
