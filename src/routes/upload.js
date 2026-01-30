@@ -52,12 +52,19 @@ router.post('/image', requireAuth, (req, res, next) => {
     const hasTos = config.TOS_ACCESS_KEY_ID && config.TOS_SECRET_ACCESS_KEY && config.TOS_BUCKET
 
     if (hasTos) {
-      // 上传到 TOS 对象存储
+      // 上传到 TOS 对象存储，加超时避免卡死
+      const TOS_UPLOAD_TIMEOUT_MS = 25000
       const ext = path.extname(req.file.originalname) || '.jpg'
       const key = `uploads/${new Date().toISOString().slice(0, 7)}/${Date.now()}-${Math.random().toString(36).substring(2, 12)}${ext}`
       const contentType = req.file.mimetype || 'image/jpeg'
 
-      const imageUrl = await uploadBuffer(req.file.buffer, key, contentType)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('TOS 上传超时（25秒）')), TOS_UPLOAD_TIMEOUT_MS)
+      })
+      const imageUrl = await Promise.race([
+        uploadBuffer(req.file.buffer, key, contentType),
+        timeoutPromise
+      ])
       console.log('[upload] TOS uploaded:', key, 'size:', req.file.size)
 
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
