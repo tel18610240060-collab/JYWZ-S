@@ -41,9 +41,17 @@ router.put('/me', requireAuth, async (req, res, next) => {
     if (!updates.length) return res.json({ ok: true })
 
     params.push(req.user.id)
-    await exec(`UPDATE users SET ${updates.join(', ')} WHERE id=?`, params)
+    const sql = `UPDATE users SET ${updates.join(', ')} WHERE id=?`
+    console.log('[users] PUT /me SQL:', sql, 'params:', params)
+    const updateRes = await exec(sql, params)
+    console.log('[users] PUT /me update result:', updateRes && updateRes.affectedRows, 'rows affected')
 
     const rows = await query('SELECT * FROM users WHERE id=? LIMIT 1', [req.user.id])
+    if (!rows || !rows[0]) {
+      console.error('[users] PUT /me 更新后未查到用户 id=', req.user.id)
+    } else {
+      console.log('[users] PUT /me 更新后用户 quit_date=', rows[0].quit_date, 'gender=', rows[0].gender)
+    }
     res.json(rows[0])
   } catch (e) {
     next(e)

@@ -79,6 +79,10 @@ router.post('/login', async (req, res, next) => {
       console.log('[auth/login] - nickname:', nickname)
       console.log('[auth/login] - avatarUrl:', avatarUrl ? avatarUrl.substring(0, 50) + '...' : 'empty')
       console.log('[auth/login] - phoneNumber:', phoneNumber ? phoneNumber.substring(0, 3) + '****' : 'none')
+
+      // 按 openid 判断新老用户：数据库中已存在该 openid 则为老用户
+      const existingByOpenid = await query('SELECT id FROM users WHERE openid = ? LIMIT 1', [s.openid])
+      const isNewUser = !existingByOpenid || existingByOpenid.length === 0
       
       const user = await upsertUserByOpenid({
         openid: s.openid,
@@ -97,10 +101,7 @@ router.post('/login', async (req, res, next) => {
 
       const token = await createSession(user.id)
       
-      // 判断是否为新用户：检查 quit_date 是否为空
-      const isNewUser = !user.quit_date || user.quit_date.trim() === ''
-      
-      console.log('[auth/login] 登录成功，user_id:', user.id, 'phoneNumber:', phoneNumber ? '***' : 'none', 'isNewUser:', isNewUser)
+      console.log('[auth/login] 登录成功，user_id:', user.id, 'phoneNumber:', phoneNumber ? '***' : 'none', 'isNewUser:', isNewUser, '(按 openid 是否已存在判断)')
       res.json({ token, user, isNewUser })
     } catch (code2sessionError) {
       console.error('[auth/login] code2session 失败:')
