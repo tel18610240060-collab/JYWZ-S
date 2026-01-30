@@ -1,0 +1,41 @@
+require('dotenv').config()
+
+function env(name, def = '') {
+  const v = process.env[name]
+  return v == null || v === '' ? def : v
+}
+
+const config = {
+  NODE_ENV: env('NODE_ENV', 'development'),
+  PORT: Number(env('PORT', '8000')),
+  MODE: env('MODE', 'mock'), // mock | prod
+
+  // Douyin code2session
+  DOUYIN_APPID: env('DOUYIN_APPID', 'tt6a721ccff411a90a01'),
+  DOUYIN_SECRET: env('DOUYIN_SECRET', '88859a0404cbd5d92444cec9961d6ce0e8025852'),
+  IS_SANDBOX: env('IS_SANDBOX', '1'),
+
+  // MySQL
+  DB_HOST: env('DB_HOST', '115.190.254.98'),
+  DB_PORT: Number(env('DB_PORT', '3306')),
+  DB_USER: env('DB_USER', 'jywz'),
+  DB_PASSWORD: env('DB_PASSWORD', 'jywz1234!'),
+  DB_NAME: env('DB_NAME', 'quit_smoking_king'),
+  DB_CONN_LIMIT: Number(env('DB_CONN_LIMIT', '10')),
+
+  // session
+  SESSION_TTL_DAYS: Number(env('SESSION_TTL_DAYS', '30')),
+
+  // douyin relation chain (not always publicly available; keep fallback enabled)
+  ENABLE_DOUYIN_RELATION: env('ENABLE_DOUYIN_RELATION', '1'), // 0|1
+
+  // TOS 对象存储（抖音云）
+  TOS_ACCESS_KEY_ID: env('TOS_ACCESS_KEY_ID', ''),
+  TOS_SECRET_ACCESS_KEY: env('TOS_SECRET_ACCESS_KEY', ''),
+  TOS_REGION: env('TOS_REGION', 'cn-beijing'),
+  TOS_BUCKET: env('TOS_BUCKET', ''),
+  // 对象访问域名（用于拼接返回的 URL），如 https://bucket.tos-cn-beijing.volces.com
+  TOS_PUBLIC_URL: env('TOS_PUBLIC_URL', '')
+}
+
+module.exports = { config }

@@ -1,0 +1,28 @@
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    environment:
+      PORT: 8000
+      MODE: prod
+      DB_HOST: 115.190.254.98
+      DB_PORT: 3306
+      DB_USER: jywz
+      DB_PASSWORD: jywz1234!
+      DB_NAME: quit_smoking_king
+      IS_SANDBOX: 1
+      DOUYIN_APPID: tt6a721ccff411a90a01
+      DOUYIN_SECRET: 88859a0404cbd5d92444cec9961d6ce0e8025852
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./public/uploads:/app/public/uploads
+    command: ["sh","-lc","node index.js"]
+
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: 115.190.254.98

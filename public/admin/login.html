@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理员登录 - 戒烟王者</title>
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .login-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .login-box {
+      background: #fff;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    .login-title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 32px;
+      color: #333;
+    }
+    .login-form {
+      margin-top: 24px;
+    }
+    .login-error {
+      background: #fff2f0;
+      color: #ff4d4f;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .login-error.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h1 class="login-title">管理员登录</h1>
+      <div id="loginError" class="login-error"></div>
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input type="password" id="password" class="form-control" placeholder="请输入管理员密码" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">登录</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/admin/js/api.js"></script>
+  <script>
+    const form = document.getElementById('loginForm')
+    const passwordInput = document.getElementById('password')
+    const errorDiv = document.getElementById('loginError')
+
+    // 检查是否已登录
+    if (getAdminToken()) {
+      window.location.href = '/admin/index.html'
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      errorDiv.classList.remove('show')
+      errorDiv.textContent = ''
+
+      const password = passwordInput.value.trim()
+      if (!password) {
+        showError('请输入密码')
+        return
+      }
+
+      try {
+        const result = await adminAPI.auth.login(password)
+        if (result.ok && result.token) {
+          setAdminToken(result.token)
+          window.location.href = '/admin/index.html'
+        } else {
+          showError('登录失败')
+        }
+      } catch (e) {
+        showError(e.message || '登录失败，请检查密码')
+      }
+    })
+
+    function showError(message) {
+      errorDiv.textContent = message
+      errorDiv.classList.add('show')
+    }
+  </script>
+</body>
+</html>
