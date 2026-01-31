@@ -58,7 +58,7 @@ router.get('/users', requireAdminAuth, async (req, res) => {
     } = req.query
 
     let sql = `
-      SELECT id, openid, unionid, nickname, avatar_url, gender, region, quit_date,
+      SELECT id, openid, unionid, nickname, avatar_url, gender, city, quit_date,
              price_per_cig, cigs_per_day, total_checkin_days, failure_count,
              last_checkin_date, last_calc_date, created_at, updated_at
       FROM users WHERE 1=1
@@ -157,7 +157,7 @@ router.put('/users/:id', requireAdminAuth, async (req, res) => {
     const body = req.body || {}
 
     const allowedFields = [
-      'nickname', 'avatar_url', 'gender', 'region', 'quit_date',
+      'nickname', 'avatar_url', 'gender', 'city', 'quit_date',
       'price_per_cig', 'cigs_per_day', 'total_checkin_days', 'failure_count',
       'last_checkin_date', 'last_calc_date'
     ]

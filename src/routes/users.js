@@ -20,7 +20,6 @@ router.put('/me', requireAuth, async (req, res, next) => {
       nickname: body.nickname,
       avatar_url: body.avatar_url,
       gender: body.gender,
-      region: body.region,
       city: body.city,
       phone_number: body.phoneNumber || body.phone_number,
       quit_date: body.quit_date,

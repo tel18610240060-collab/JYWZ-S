@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   unionid VARCHAR(64) NULL,
   nickname VARCHAR(64) NOT NULL,
   avatar_url VARCHAR(512) NOT NULL DEFAULT '',
-  gender ENUM('男','女','保密') NOT NULL DEFAULT '保密',
+  gender ENUM('男','女','保密') NOT NULL DEFAULT '男',
   region VARCHAR(64) NOT NULL DEFAULT '',
   quit_date DATE NULL,
   price_per_cig DECIMAL(10,2) NOT NULL DEFAULT 1.50,
