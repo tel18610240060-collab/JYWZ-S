@@ -48,13 +48,8 @@ router.get('/', requireAuth, async (req, res, next) => {
       return res.status(500).json({ error: '数据库查询失败', detail: dbError.message })
     }
     
-    // 打印原始数据库查询结果
-    console.log('[checkins] GET raw data from database:', JSON.stringify(rows, null, 2))
-    console.log('[checkins] GET raw data count:', rows ? rows.length : 0)
-    
     // 处理空数据情况
     if (!rows || rows.length === 0) {
-      console.log('[checkins] GET empty data, returning []')
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       return res.json([])
     }
@@ -154,7 +149,6 @@ router.post('/', requireAuth, async (req, res, next) => {
       [totalCheckinDays, latestDate, req.user.id]
     )
     
-    console.log('[checkins] POST success, checkin_date:', checkinDate, 'total_checkin_days:', totalCheckinDays)
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.json({ ok: true, checkin_date: checkinDate, total_checkin_days: totalCheckinDays })
   } catch (e) {

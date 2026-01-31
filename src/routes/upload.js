@@ -65,7 +65,6 @@ router.post('/image', requireAuth, (req, res, next) => {
         uploadBuffer(req.file.buffer, key, contentType),
         timeoutPromise
       ])
-      console.log('[upload] TOS uploaded:', key, 'size:', req.file.size)
 
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       return res.json({

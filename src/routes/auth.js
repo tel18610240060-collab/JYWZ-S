@@ -28,11 +28,8 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ error: 'missing code' })
     }
 
-    console.log('[auth/login] 收到登录请求，code:', code ? code.substring(0, 10) + '...' : 'empty')
-    
     try {
       const s = await code2session(code)
-      console.log('[auth/login] code2session 成功，openid:', s.openid ? s.openid.substring(0, 10) + '...' : 'empty')
       
       // 仅当前端传了 userInfo 时才更新昵称/头像，否则保留库内已有（避免 getUserProfile 失败时覆盖老用户）
       const nickname = (userInfo && (userInfo.nickName || userInfo.nickname) && String(userInfo.nickName || userInfo.nickname).trim())
@@ -52,9 +49,8 @@ router.post('/login', async (req, res, next) => {
           try {
             const phoneSession = await code2session(phoneLoginCode)
             sessionKeyForPhone = phoneSession.session_key
-            console.log('[auth/login] 使用 phoneLoginCode 获取 session_key 用于解密手机号')
           } catch (phoneSessionError) {
-            console.error('[auth/login] 获取手机号 session_key 失败:', phoneSessionError.message)
+            // 获取手机号 session_key 失败，使用登录的 session_key
             // 如果失败，尝试使用登录的 session_key
           }
         }
@@ -63,23 +59,14 @@ router.post('/login', async (req, res, next) => {
           try {
             const phoneInfo = decryptPhoneNumber(encryptedData, iv, sessionKeyForPhone)
             phoneNumber = phoneInfo.phoneNumber || phoneInfo.purePhoneNumber
-            console.log('[auth/login] 解密手机号成功:', phoneNumber ? phoneNumber.substring(0, 3) + '****' : 'none')
           } catch (decryptError) {
-            console.error('[auth/login] 解密手机号失败:', decryptError.message)
+            // 解密手机号失败，继续流程
           }
         }
       } else if (phoneCode) {
         // 新方式：使用 phoneCode（需要RSA加密，暂不支持）
-        console.warn('[auth/login] 新方式获取手机号暂不支持，请使用旧方式')
       }
 
-      console.log('[auth/login] 准备保存用户信息:')
-      console.log('[auth/login] - openid:', s.openid ? s.openid.substring(0, 10) + '...' : 'empty')
-      console.log('[auth/login] - unionid:', s.unionid || 'none')
-      console.log('[auth/login] - nickname:', nickname)
-      console.log('[auth/login] - avatarUrl:', avatarUrl ? avatarUrl.substring(0, 50) + '...' : 'empty')
-      console.log('[auth/login] - phoneNumber:', phoneNumber ? phoneNumber.substring(0, 3) + '****' : 'none')
-      
       // 按 openid 判断新老用户：upsertUserByOpenid 内部会查询并返回 isNewUser
       const { user, isNewUser } = await upsertUserByOpenid({
         openid: s.openid,
@@ -88,23 +75,11 @@ router.post('/login', async (req, res, next) => {
         ...(avatarUrl !== undefined && { avatarUrl }),
         ...(phoneNumber !== undefined && phoneNumber !== null && { phoneNumber })
       })
-      
-      console.log('[auth/login] 用户保存结果:')
-      console.log('[auth/login] - user.id:', user.id)
-      console.log('[auth/login] - user.openid:', user.openid ? user.openid.substring(0, 10) + '...' : 'empty')
-      console.log('[auth/login] - user.nickname:', user.nickname)
-      console.log('[auth/login] - user.avatar_url:', user.avatar_url ? user.avatar_url.substring(0, 50) + '...' : 'empty')
-      console.log('[auth/login] - user.phone_number:', user.phone_number ? user.phone_number.substring(0, 3) + '****' : 'none')
 
       const token = await createSession(user.id)
-      
-      console.log('[auth/login] 登录成功，user_id:', user.id, 'phoneNumber:', phoneNumber ? '***' : 'none', 'isNewUser:', isNewUser, '(按 openid 是否已存在判断)')
       res.json({ token, user, isNewUser })
     } catch (code2sessionError) {
-      console.error('[auth/login] code2session 失败:')
-      console.error('[auth/login] error message:', code2sessionError.message)
-      console.error('[auth/login] error detail:', code2sessionError.detail)
-      console.error('[auth/login] error statusCode:', code2sessionError.statusCode)
+      // 保留错误日志用于生产环境问题排查
       throw code2sessionError
     }
   } catch (e) {
@@ -121,7 +96,6 @@ router.post('/phone', requireAuth, async (req, res, next) => {
     
     if (phoneCode) {
       // 新方式：使用 phoneCode（需要RSA加密，暂不支持，返回提示）
-      console.log('[auth/phone] 收到新方式 phoneCode')
       return res.status(400).json({ error: '新方式获取手机号需要RSA加密，暂不支持，请使用旧方式（encryptedData + iv）' })
     } else if (encryptedData && iv && loginCode) {
       // 旧方式：使用 encryptedData + iv 解密
@@ -134,7 +108,6 @@ router.post('/phone', requireAuth, async (req, res, next) => {
         // 更新用户手机号
         await exec('UPDATE users SET phone_number=? WHERE id=?', [phoneNumber, req.user.id])
         
-        console.log('[auth/phone] 手机号解密成功:', phoneNumber ? phoneNumber.substring(0, 3) + '****' : 'none')
         res.json({ phoneNumber })
       } catch (e) {
         console.error('[auth/phone] 解密手机号失败:', e.message)

@@ -20,15 +20,13 @@ function createApp() {
   // 但其他API路由需要，所以保留
   app.use(express.json({ limit: '1mb' }))
 
-  // 请求日志中间件（记录方法和路径，以及响应状态码）
+  // 请求日志中间件（仅记录错误请求）
   app.use((req, res, next) => {
     const originalSend = res.send
     res.send = function(data) {
       const statusCode = res.statusCode || 200
       if (statusCode >= 400) {
         console.error(`[${statusCode}] ${req.method} ${req.path}`)
-      } else {
-        console.log(`${req.method} ${req.path}`)
       }
       return originalSend.call(this, data)
     }

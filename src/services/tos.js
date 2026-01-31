@@ -35,6 +35,7 @@ async function uploadBuffer(buffer, key, contentType = 'image/jpeg') {
   const client = getTosClient()
   const { TOS_BUCKET, TOS_PUBLIC_URL } = config
 
+  // 先上传对象
   await client.putObject({
     bucket: TOS_BUCKET,
     key,
@@ -42,15 +43,28 @@ async function uploadBuffer(buffer, key, contentType = 'image/jpeg') {
     contentLength: buffer.length,
     contentType
   })
+  // 设置对象为公开读，避免访问时返回 403
+  try {
+    await client.setObjectAcl({
+      bucket: TOS_BUCKET,
+      key,
+      acl: 'public-read'
+    })
+  } catch (aclError) {
+    // 如果设置 ACL 失败，记录警告但不阻断流程（可能 bucket 已设置公开读，或需要单独配置）
+    console.warn('[tos] setObjectAcl 失败，key:', key, 'error:', aclError.message)
+  }
 
   // 返回公网可访问的 URL
   if (TOS_PUBLIC_URL) {
     const base = TOS_PUBLIC_URL.replace(/\/$/, '')
-    return `${base}/${key}`
+    const url = `${base}/${key}`
+    return url
   }
   // 默认格式：https://{bucket}.tos-{region}.volces.com/{key}
   const region = config.TOS_REGION || 'cn-beijing'
-  return `https://${TOS_BUCKET}.tos-${region}.volces.com/${key}`
+  const url = `https://${TOS_BUCKET}.tos-${region}.volces.com/${key}`
+  return url
 }
 
 module.exports = { getTosClient, uploadBuffer }
